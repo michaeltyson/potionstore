@@ -14,7 +14,7 @@ first:
   state: "CA"
   zipcode: "90035"
   country:  "US"
-  payment_type: "Visa"
+  payment_type: "PayPal"
   ccnum: "XXXXXXXXXXXXXXXX3456"
   comment: "Don't call"
   failure_code: 0

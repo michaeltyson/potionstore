@@ -19,7 +19,7 @@
 			<% if @type == nil || @type == "quantity" -%>
 			<td><%= @product_quantity[product][i] %></td>
 			<% elsif @type == "amount" -%>
-			<td><%= number_to_currency(@product_revenue[product][i]) %></td>
+			<td><%= Currency.report_currency.format_amount(@product_revenue[product][i]) %></td>
 			<% elsif @type == "percentage" -%>
 			<td><%= number_to_percentage @product_percentage[product][i], :precision => 0 %></td>
 			<% end -%>
@@ -29,14 +29,14 @@
 		<tr class="total">
 			<th class="first">Total</th>
 			<% for val in @revenue -%>
-			<td><%= number_to_currency(val) %></td>
+			<td><%= Currency.report_currency.format_amount(val) %></td>
 			<% end -%>
 		</tr>
 		<tr>
 			<th></th>
 			<td colspan="4" id="projections">
-				Projections — This month: <%= number_to_currency(@month_estimate, :precision => 0) %> &nbsp; / &nbsp;
-				Next 365 Days: <%= number_to_currency(@year_estimate, :precision => 0) %>
+				Projections — This month: <%= Currency.report_currency.format_amount(@month_estimate, :precision => 0) %> &nbsp; / &nbsp;
+				Next 365 Days: <%= Currency.report_currency.format_amount(@year_estimate, :precision => 0) %>
 			</td>
 		</tr>
 	</table>

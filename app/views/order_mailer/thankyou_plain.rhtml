@@ -44,7 +44,7 @@ Company: <%= @order.company %>
 Email: <%= @order.email %>
 
 Billing Address:
-<% if @order.payment_type == 'PayPal' -%>
+<% if @order.address1.blank? -%>
 N/A
 <% else -%>
 <%= @order.address1 -%><%= ', ' + @order.address2 if not @order.address2.blank? %>
@@ -58,13 +58,16 @@ Payment:
 Purchased Items:
 
 <% for item in @order.line_items -%>
-<%= sprintf("%d %s @ %s each", item.quantity, item.product.name, number_to_currency(item.unit_price)) %>
+<%= sprintf("%d %s @ %s each", item.quantity, item.product.name, @order.currency.format_amount(item.unit_price)) %>
 <% end -%>
 <% if @order.coupon -%>
-<%= @order.coupon.description %>: -<%= number_to_currency(@order.coupon_amount) %>
+<%= @order.coupon.description %>: -<%= @order.currency.format_amount(@order.coupon_amount) %>
 <% end -%>
 
-Total: <%= number_to_currency(@order.total) %>
+<% if @order.has_tax? -%>
+<%= @order.tax_name %>: <%= @order.currency.format_amount(@order.tax_amount) %>
+<% end -%>
+Total: <%= @order.currency.format_amount(@order.total) %>
 
 <% if coupons && coupons.length > 0 -%>
 <% vc_coupons = coupons.compact()

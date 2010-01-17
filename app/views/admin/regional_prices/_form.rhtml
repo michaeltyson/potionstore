@@ -1,0 +1,14 @@
+<%= form.error_messages %>
+
+<p>
+  <%= form.label :currency %><br />
+  <%= form.select :currency, @currencies, :selected => @regional_price.currency.code  %> <%= link_to 'Edit Currencies', admin_currencies_path %>
+</p>
+
+<p>
+  <%= form.label :amount %><br />
+  <%= form.text_field :amount, :size => 10 %>
+</p>
+
+<%= form.submit 'Save' %>
+

@@ -1,0 +1,20 @@
+<h2>Regional Prices</h2>
+
+<table class="list">
+  <tr>
+	<th>Currency</th>
+	<th>Price</th>
+ 	<th colspan='2'>Action</th>
+</tr>
+<% @product.regional_prices.each do |price| %>
+  <tr>
+    <td><%=h price.currency.code %></td>
+	  <td><%=h price.formatted_amount %></td>
+    <td><%= link_to 'Edit', edit_admin_product_regional_price_path(@product, price) %></td>
+    <td><%= link_to 'Delete', admin_product_regional_price_path(@product, price), :confirm => 'Are you sure?', :method => :delete %></td>
+  </tr>
+<% end %>
+</table>
+<p>
+<%= link_to 'Add Regional Price', new_admin_product_regional_price_path(@product) %>
+</p>

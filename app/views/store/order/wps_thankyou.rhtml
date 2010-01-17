@@ -1,0 +1,58 @@
+<% content_for :head do %>
+  <script type="text/javascript" charset="utf-8" src="/media/scripts/newsletter-form.js"></script>
+<% end %>
+<h1>Thank You</h1>
+
+<%- license = ( @order ? ( @order.line_items.count == 1 ? 'license' : 'licenses' ) : 'license(s)' ) -%>
+
+<p>
+    Thank you for purchasing <%=$STORE_PREFS['company_name']%> software.  Your transaction <%= " of #{@order.currency.format_amount @payment} " if @payment %>has been completed, and a receipt 
+    for your purchase has been emailed to you<%= " at #{@order.email}" if @order %>.
+</p>
+<p>
+    You should receive an additional e-mail shortly with your software <%= license %> and further instructions.  If you do not 
+    receive this email, please check your junk folder.
+</p>
+<p>
+    If you have not downloaded the software already, please do so now:
+</p>
+<ul>
+    <% for product in @products -%>
+    <li><a href="<%=h product.download_url %>">Download <%=h product.name %></a></li>
+    <% end -%>
+</ul>
+<h2>Let us keep you informed</h2>
+<p>
+    While your license information is delivered, why not sign up to our newsletter?  We'll let you know about important updates,
+    special offers, and new products that may interest you.
+</p>
+<p>
+    Just check your email address below and click 'Subscribe' to sign up.
+</p>
+<div id="newsletter-form">
+    <input type="text" id="newsletter-input" value="<%=h @order.email%>" size="30">
+    <input type="submit" id="newsletter-subscribe" value="Subscribe"><span id="newsletter-message"></span>
+</div>
+
+<% if is_live?() && ! $STORE_PREFS['google_analytics_account'].blank? && @order -%>
+<!-- Google Analytics Transaction Tracking -->
+<form style="display:none;" name="utmform">
+<%
+=begin
+Format for the textarea field:
+
+UTM:T|[order-id]|[affiliation]|[total]|[tax]|[shipping]|[city]|[state]|[country]
+UTM:I|[order-id]|[sku/code]|[productname]|[category]|[price]|[quantity]
+=end
+-%>
+<textarea id="utmtrans">
+UTM:T|<%=@order.id %>||<%=@order.total*@order.currency_rate %>|<%=@order.tax_amount*@order.currency_rate %>|<%=@order.shipping_total*@order.currency_rate %>|<%=@order.city %>|<%=@order.state %>|<%=@order.country %>
+<% for item in @order.line_items -%>
+UTM:I|<%=@order.id %>|<%=item.product.code %>|<%=item.product.name %>||<%=item.unit_price*@order.currency_rate %>|<%=item.quantity %>
+<% end -%>
+</textarea>
+</form>
+<script type="text/javascript">
+__utmSetTrans();
+</script>
+<% end -%>

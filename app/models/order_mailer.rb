@@ -18,6 +18,13 @@ class OrderMailer < ActionMailer::Base
     	 :transfer_encoding => 'base64',
     	 :body => render_message("thankyou_html", :order => order)
   end
+  
+  def error_notice(order)
+    from $STORE_PREFS['purchase_receipt_sender_email']
+    recipients $STORE_PREFS['sales_email']
+    subject "Error notice for Order #{order.id}"
+    body 'order' => order
+  end
 
   def lost_license_sent(order)
     recipients $STORE_PREFS['lost_license_sent_notification_recipient_email']

@@ -113,20 +113,31 @@ body { margin: 0 50pt; }
 					<%=h item.license_key %>
 				</td>
 				<td class="unit" style="padding:5px 0;text-align:center;width:12%;border-bottom: 1px solid #ddd">
-					<%= number_to_currency item.unit_price %>
+					<%= @order.currency.format_amount item.unit_price %>
 				</td>
 				<td class="qty" style="padding:5px 0;text-align:center;width:12%;border-bottom: 1px solid #ddd">
 					<%= item.quantity %>
 				</td>
 				<td class="price" style="padding:5px 0;text-align:right;width:11%;border-bottom: 1px solid #ddd">
-					<%= number_to_currency item.unit_price * item.quantity %>
+					<%= @order.currency.format_amount(item.unit_price * item.quantity) %>
 				</td>
 			</tr>
 			<% end -%>
 			<% if @order.coupon -%>
 			<tr>
 				<td colspan="4" style="padding:5px 0"><%= @order.coupon.description %></td>
-				<td class="price" style="padding:5px 0;text-align:right">-<%= number_to_currency(@order.coupon_amount) %></td>
+				<td class="price" style="padding:5px 0;text-align:right">-<%= @order.currency.format_amount(@order.coupon_amount) %></td>
+			</tr>
+			<% end -%>
+			<% if @order.has_tax? -%>
+			<tr class="r">
+				<td colspan="3" style="padding:5px 0;border-bottom: 1px solid #ddd"></td>
+				<td class="qty" style="padding:5px 0;border-bottom: 1px solid #ddd;text-align:center">
+					<strong><%= @order.tax_name %>:</strong>
+				</td>
+				<td class="tax" style="padding:5px 0;border-bottom: 1px solid #ddd;text-align:right">
+					<strong><%= @order.currency.format_amount @order.tax_amount %></strong>
+				</td>
 			</tr>
 			<% end -%>
 			<tr id="total" class="r">
@@ -135,7 +146,7 @@ body { margin: 0 50pt; }
 					<strong>Total:</strong>
 				</td>
 				<td class="price" style="padding:5px 0;border-bottom: 1px solid #ddd;text-align:right">
-					<strong><%= number_to_currency @order.total %></strong>
+					<strong><%= @order.currency.format_amount @order.total %></strong>
 				</td>
 			</tr>
 			<% if @order.comment -%>

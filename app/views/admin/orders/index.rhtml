@@ -28,7 +28,7 @@
     <td><%= order.licensee_name ? order.licensee_name : order.name -%></td>
     <td><%= order.email -%></td>
     <td><% if order.cc_order? %><%= order.address -%>, <%= order.city -%>, <%= order.state -%> <%= order.zipcode -%>,<% end %> <%= order.country -%>
-    <td><%= number_to_currency order.total -%></td>
+    <td><%= order.currency.format_amount(order.total) -%> <%= order.currency.code %></td>
     <td><%= order.payment_type -%></td>
     <% if order.failure_code -%>
     <td><%= order.failure_code -%>: <%= order.failure_reason -%></td>

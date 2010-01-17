@@ -40,8 +40,8 @@ class LineItem < ActiveRecord::Base
     return unit_price
   end
 
-  def regular_price
-    return product.price
+  def regular_price_for_currency(currency)
+    return product.lookup_price(currency.code).amount
   end
 
   def license_url

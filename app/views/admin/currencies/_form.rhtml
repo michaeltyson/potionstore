@@ -1,0 +1,108 @@
+<script type="text/javascript" charset="utf-8">
+  var _changeTimeout = null;
+  onload = function() {
+    document.getElementById('currency_code').onchange = function() {
+      document.getElementById('currency_label').innerHTML = this.value;
+      
+      if ( _changeTimeout ) {
+        window.clearTimeout(_changeTimeout);
+      }
+      _changeTimeout = window.setTimeout(function() {
+        _changeTimeout = null;
+        var countries = document.getElementById('currency_countries');
+        var currency = document.getElementById('currency_code').value;
+        
+        countries.disable();
+        countries.className = 'pending';
+        new Ajax.Request("<%= url_for :controller => :currencies, :action => 'countries_for_currency' %>", {
+                parameters: { currency: currency },
+                onSuccess: function(transport) {
+                  var data = transport.responseText;
+                  array = data.split(',');
+                  for ( var index in countries.options ) {
+                    countries.options[index].selected = ( array.indexOf(countries.options[index].value) == -1 ? false : true );
+                  }
+                  countries.enable();
+                  countries.className = '';
+                }}); 
+      }, 500);
+    };
+  };
+</script>
+
+
+<%= form.error_messages %>
+
+<p>
+  <%= form.label :code, 'Currency Code' %><br />
+  <%= form.select :code, @supported_currencies  %>
+</p>
+
+<p>
+  <%= form.label :countries, 'Applicable Countries' %><br />
+  <%= form.select :countries, country_name_and_code_pairs, {}, {:size => 10, :multiple => "multiple"} %>
+  <br/><small>Hold Command/Control to select multiple</small>
+</p>
+
+<p>
+  <%= form.label :rate, 'Conversion Rate' %><br />
+  <%= form.text_field :rate, :size => 10, :value => (@currency.rate_set? ? @currency.rate : "") %> <span id="currency_label"><%= @currency.code %></span> = 1 <%= Currency.default.code %><br/>
+  <small>Leave blank for automatic currency rate (Recommended)<br/>
+    Used for revenue reports and when you have not already specified a product price/coupon amount in this currency</small>
+</p>
+
+
+<h3>Representation</h3>
+
+<table>
+  <tbody>
+  <tr>
+    <th scope="row">
+      <%= form.label :unit %>
+    </th>
+    <td>
+      <%= form.text_field :unit, :size => 10 %>
+      <br/><small>Symbol to represent currency (e.g. $, &pound;, &euro;, etc.)</small>
+    </td>
+  </tr>
+  <tr>
+    <th scope="row">
+      <%= form.label :precision %>    
+    </th>
+    <td>
+      <%= form.text_field :precision, :size => 2 %>
+      <br/><small>Number of decimal places to represent quantities (normally 2)</small>
+    </td>
+  </tr>
+  <tr>
+    <th scope="row">
+      <%= form.label :separator, 'Decimal place separator' %>  
+    </th>
+    <td>
+      <%= form.text_field :separator, :size => 2 %>
+    </td>
+  </tr>
+  <tr>
+    <th scope="row">
+      <%= form.label :delimiter, 'Thousands delimiter' %>  
+    </th>
+    <td>
+      <%= form.text_field :delimiter, :size => 2 %>
+    </td>
+  </tr>
+  <tr>
+    <th scope="row">
+      <%= form.label :format %>
+    </th>
+    <td>
+      <%= form.radio_button :format, '%u%n' %> Unit, Number (e.g. $100)<br />
+      <%= form.radio_button :format, '%n%u' %> Number, Unit (e.g. 100$)<br />
+      <%= form.radio_button :format, '%n %u' %> Number, Space, Unit (e.g. 100 $)<br />
+      <%= form.radio_button :format, '%n %u' %> Unit, Space, Number (e.g. $ 100)<br />
+    </td>
+  </tr>
+  </tbody>
+</table>
+
+<%= form.submit 'Save' %>
+

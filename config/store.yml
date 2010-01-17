@@ -1,8 +1,8 @@
 # Admin site login
 admin_username: "admin"
-admin_password: "password"
+admin_password: "5f4dcc3b5aa765d61d8327deb882cf99" # echo -n "password" | md5
 
-# Presentation stuf
+# Presentation stuff
 company_name: "My Company"
 company_url: "http://www.mycompany.com/"
 company_logo_path: ""
@@ -12,10 +12,45 @@ google_analytics_account: ""
 include_mint: false
 paypal_express_checkout_header_image: "https://www.mycompany.com/images/mylogo.png"
 
-# Google checkout?
-allow_google_checkout: true
+# Supported payment types (One or more of: gcheckout, paypal_express_checkout, paypal_wps, creditcard)
+payment_types: ["paypal_wps"]
+default_payment_type: "paypal_wps"
 
-# Email addresses
+
+# Tax settings (by country code, then optionally, state)
+tax:
+  AU:
+    name: GST
+    rate: 0.1
+# US:
+#   CA:
+#     name: VAT
+#     rate: 0.1   
+
+# Currency settings
+
+# Currency in which to display reports in admin section
+report_currency:
+  code:        USD
+#  precision:  2
+#  unit:       "$"
+#  separator:  "."
+#  delimiter:  ","
+#  format:     "%u%n"
+
+# Default currency for sales
+default_currency: 
+  code:        USD
+## rate is currency's value compared to report currency above; leave blank to convert automatically (recommended)
+#  rate:        1.11135808
+#  precision:  2
+#  unit:       "$"
+#  separator:  "."
+#  delimiter:  ","
+#  format:     "%u%n"
+
+
+# Email settings
 support_email: "support@mycompany.com"
 sales_email: "sales@mycompany.com"
 

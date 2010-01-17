@@ -56,6 +56,8 @@ and running on your local machine.
   That is the URL that Google uses to make callbacks. If you don't set this up, your customers will
   not get their orders delivered by email.
 
+- If you are setting up PayPal's Website Payments Standard (WPS) refer to config/paypal\_wps.yml for
+  further information and configuration.
 
 Debugging
 ---------

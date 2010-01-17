@@ -11,7 +11,7 @@
 		<% elsif product.active == 1 -%>
 		<td><%= product.name %></td>
 		<td><%= text_field "items", product.id, :size => 4 %></td>
-		<td>$<%= text_field "item_prices", product.id, :size => 5, :value => product.price %></td>
+		<td>$<%= text_field "item_prices", product.id, :size => 5, :value => product.lookup_price(@order.currency.code).amount %></td>
 		<td></td>
 		<% end -%>
 	</tr>

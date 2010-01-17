@@ -5,12 +5,12 @@ first:
   description: "Test Coupon NOT FOR REDEMPTION"
   coupon: "Test 1"
   product_code: "TEST1"
-  amount: 0.00
+  amount: 5.00
   percentage: 0
   used_count: 0
   use_limit:  1
-  creation_time: "2007-01-01 00:00:00+08:00"
-  numdays: 365
+  creation_time: "2001-01-01 00:00:00+08:00"
+  numdays: 9999
 expired:
   id: 2
   code: "RAILS_TEST2"

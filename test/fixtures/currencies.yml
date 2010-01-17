@@ -1,0 +1,8 @@
+euros:
+  code: EUR
+  rate: 1.6
+  unit: €
+  
+ausdollars:
+  code: AUD
+  rate: 0.8

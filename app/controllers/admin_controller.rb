@@ -12,8 +12,9 @@ class AdminController < ApplicationController
       render :action => "login" and return
     end
 
+    require 'digest/md5'
     if params[:username] == $STORE_PREFS['admin_username'] &&
-       params[:password] == $STORE_PREFS['admin_password']
+       Digest::MD5.hexdigest(params[:password]) == $STORE_PREFS['admin_password']
       session[:logged_in] = true
       if session[:intended_url] != nil
         redirect_to session[:intended_url]
@@ -39,7 +40,7 @@ class AdminController < ApplicationController
     end
 
     revenue_summary()
-    @chart = OpenFlashChart.swf_object(500, 170, '/admin/charts/revenue_history_days')
+    @chart = OpenFlashChart.swf_object(500, 170, url_for(:controller => 'admin/charts', :action => 'revenue_history_days'))
   end
 
   # The revenue_xxx functions get called through ajax when user chooses different types of reports
@@ -63,25 +64,36 @@ class AdminController < ApplicationController
 
   def revenue_history_days
     @type = "30 Day"
-    @chart = OpenFlashChart.swf_object(500, 170, '/admin/charts/revenue_history_days')
+    @chart = OpenFlashChart.swf_object(500, 170, url_for(:controller => 'admin/charts', :action => 'revenue_history_days'))
     render :partial =>  "revenue_history"
   end
 
   def revenue_history_weeks
     @type = "26 Week"
-    @chart = OpenFlashChart.swf_object(500, 170, '/admin/charts/revenue_history_weeks')
+    @chart = OpenFlashChart.swf_object(500, 170, url_for(:controller => 'admin/charts', :action => 'revenue_history_weeks'))
     render :partial =>  "revenue_history"
   end
 
   def revenue_history_months
     @type = "12 Month"
-    @chart = OpenFlashChart.swf_object(500, 170, '/admin/charts/revenue_history_months')
+    @chart = OpenFlashChart.swf_object(500, 170, url_for(:controller => 'admin/charts', :action => 'revenue_history_months'))
     render :partial =>  "revenue_history"
   end
 
   # Coupon actions
   def generate_coupons
     if params[:form]
+      params[:form]['regional_prices'].lines.each do |line|
+        currency, amount = line.strip.split /\s/
+        next if !currency || !amount
+        if currency == Currency.default.code 
+          flash[:error] = "Currency '#{currency}' is the default - specify value under 'Amount'. Coupons not generated."
+          return
+        elsif !Currency.lookup currency
+          flash[:error] = "Currency '#{currency}' is not available. Coupons not generated."
+          return
+        end
+      end
       form = params[:form]
       @coupons = []
       1.upto(Integer(form[:quantity])) { |i|
@@ -92,6 +104,12 @@ class AdminController < ApplicationController
         coupon.amount = form[:amount]
         coupon.use_limit = form[:use_limit]
         coupon.save()
+        form[:regional_prices].lines.each do |line|
+          currency, amount = line.strip.split /\s/
+          next if !currency || !amount
+          regional_price = coupon.regional_prices.build(:currency => currency, :amount => amount)
+          regional_price.save
+        end
         @coupons << coupon
       }
       flash[:notice] = 'Coupons generated'
@@ -176,9 +194,9 @@ class AdminController < ApplicationController
                  where status = 'C' and
                        lower(payment_type) != 'free' and
                        current_date - #{days-1} <= order_time) as orders,
-               sum(line_items.unit_price * quantity)
-                 - sum(coalesce(coupons.amount, 0))
-                 - sum(line_items.unit_price * quantity * coalesce(percentage, 0) / 100) as revenue,
+                       (sum(line_items.unit_price * quantity)
+                         - sum(coalesce(regional_prices.amount, coupons.amount, 0))
+                         - sum(line_items.unit_price * quantity * coalesce(percentage, 0) / 100)) * orders.currency_rate as revenue,
                sum(quantity) as quantity,
                products.name as product_name
 
@@ -186,6 +204,7 @@ class AdminController < ApplicationController
              inner join line_items on orders.id = line_items.order_id
              left outer join products on products.id = line_items.product_id
              left outer join coupons on coupons.id = orders.coupon_id
+             left outer join regional_prices on regional_prices.container_id = coupons.id AND regional_prices.container_type = 'Product' AND regional_prices.currency = orders.currency
 
         where status = 'C' and lower(payment_type) != 'free' and current_date - #{days-1} <= order_time
 
@@ -236,13 +255,14 @@ class AdminController < ApplicationController
 
     def last_n_days_revenue(days)
       last_n_days_sql = "
-        select sum(line_items.unit_price * quantity)
-                  - sum(coalesce(coupons.amount, 0))
-                  - sum(line_items.unit_price * quantity * coalesce(percentage, 0) / 100) as revenue
+        select (sum(line_items.unit_price * quantity)
+                  - sum(coalesce(regional_prices.amount, coupons.amount, 0))
+                  - sum(line_items.unit_price * quantity * coalesce(percentage, 0) / 100)) * orders.currency_rate as revenue
 
           from orders
                inner join line_items on orders.id = line_items.order_id
                left outer join coupons on coupons.id = orders.coupon_id
+               left outer join regional_prices on regional_prices.container_id = coupons.id AND regional_prices.container_type = 'Product' AND regional_prices.currency = orders.currency
 
          where status = 'C' and lower(payment_type) != 'free' and current_date - #{days-1} <= order_time"
       result = Order.connection.select_all(last_n_days_sql)

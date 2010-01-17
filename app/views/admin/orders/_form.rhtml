@@ -1,3 +1,14 @@
+<script type="text/javascript" charset="utf-8">
+  onload = function() {
+    document.getElementById('order_currency').change = function() {
+      new Ajax.Updater(document.getElementById('product_quantities'), 
+                '<%= url_for :overwrite_params => {:action => :product_quantities_for_currency} %>', 
+                {parameters: { currency: this.value, id: '<%= @order.id %>' }});
+    };
+  };
+</script>
+
+
 <% if @order && !@order.new_record? -%>
 <%= form.hidden_field :id %>
 <%= form.hidden_field :status %>
@@ -12,8 +23,12 @@
 		<td><%= form.text_field :email %></td>
 	</tr>
 	<tr>
+		<td>Currency:</td>
+		<td><%= form.select :currency, @currencies, :selected => @order.currency.code  %> <%= link_to 'Edit Currencies', admin_currencies_path %></td>
+	</tr>
+	<tr>
 		<td>Items:</td>
-		<td><%= render :partial => "product_quantities" -%></td>
+		<td id='product_quantities'><%= render :partial => "product_quantities" -%></td>
 	</tr>
 	<tr>
 		<td>Company:</td>

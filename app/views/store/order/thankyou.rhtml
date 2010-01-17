@@ -83,9 +83,9 @@ UTM:I|[order-id]|[sku/code]|[productname]|[category]|[price]|[quantity]
 =end
 -%>
 <textarea id="utmtrans">
-UTM:T|<%=@order.id %>||<%=@order.total %>|<%=@order.tax_total %>|<%=@order.shipping_total %>|<%=@order.city %>|<%=@order.state %>|<%=@order.country %>
+UTM:T|<%=@order.id %>||<%=@order.total*@order.currency_rate %>|<%=@order.tax_amount*@order.currency_rate %>|<%=@order.shipping_total*@order.currency_rate %>|<%=@order.city %>|<%=@order.state %>|<%=@order.country %>
 <% for item in @order.line_items -%>
-UTM:I|<%=@order.id %>|<%=item.product.code %>|<%=item.product.name %>||<%=item.unit_price %>|<%=item.quantity %>
+UTM:I|<%=@order.id %>|<%=item.product.code %>|<%=item.product.name %>||<%=item.unit_price*@order.currency_rate %>|<%=item.quantity %>
 <% end -%>
 </textarea>
 </form>

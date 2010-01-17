@@ -1,0 +1,39 @@
+<% content_for :head do %>
+<script type="text/javascript">
+var HELP_VALUES = new Array();
+HELP_VALUES['#licensee_name'] = 'optional';
+</script>
+<% end %>
+
+<%= render :partial => "offsite_checkout_summary", :locals => { :address_name => "PayPal email", :order => @order } %>
+
+<% form_tag($STORE_PREFS['paypal_wps_url'], :onsubmit => "javascript:#{'setUrchinInputCode();' if not $STORE_PREFS['google_analytics_account'].blank?} return validate();") do -%>
+
+<% {  "cmd"              => "_xclick",
+      "business"         => $STORE_PREFS['paypal_wps_email_address'],
+      "item_name"        => $STORE_PREFS['paypal_wps_purchase_item_name'],
+      "item_number"      => @order.tinyencode,
+      "amount"           => @order.total_before_tax,
+      "no_shipping"      => 1,
+      "no_note"          => 1,
+      "currency_code"    => @order.currency.code,
+      "return"           => url_for(:controller => 'order', :action => 'wps_thankyou', :only_path => false),
+      "notify_url"       => url_for(:controller => 'notification', :action => 'paypal_wps', :only_path => false)
+      }.each_pair do |key,value| -%>
+<%= hidden_field_tag(key, value) if value %>
+<% end -%>
+
+<div class="d"></div>
+
+<div class="narrow">
+  <h2>Your Information</h2>
+  <p>
+    <label><span>Name on License:</span> <%= text_field_tag "custom", params[:licensee_name], :id => "licensee_name", :size => 30 %></label>
+  </p>
+</div>
+
+<p style="text-align: right;">
+<%= submit_tag(" &nbsp; Continue to PayPal &rarr; ") %>
+</p>
+
+<% end -%>

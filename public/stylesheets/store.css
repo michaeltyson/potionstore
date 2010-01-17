@@ -103,6 +103,11 @@ input.qty
 
 #products img { vertical-align:middle; margin-right:5px; }
 
+#products td.tax {
+   font-weight: normal;
+   font-size: 0.8em;
+}
+
 #discounts
 {
     border: 1px dotted #ccc;
@@ -142,6 +147,7 @@ table#order
 table#order td { margin:0; padding:0 0 7px; }
 table#order .price { width:130px; text-align:right; padding-right:8px; }
 table#order .prod { font-weight:bold; font-size:12px; }
+table#order .tax td { padding-top: 0px; font-size:12px; }
 table#order #total td { padding-top: 10px; font-size:14px; }
 
 span, label, .label

@@ -58,8 +58,13 @@ class Order < ActiveRecord::Base
     end
   end
 
+  def valid_licensee_name(licensee_name)
+    return licensee_name != nil && licensee_name.strip != '' && !((licensee_name =~ /^[\w ]*$/) != nil && licensee_name.length < 8)
+  end
+
   def total
-    return round_money(total_before_applying_coupons() - coupon_amount())
+    before_tax = round_money(total_before_applying_coupons() - coupon_amount())
+    return round_money(before_tax * (1 + tax_rate))
   end
 
   def total_before_applying_coupons
@@ -69,19 +74,49 @@ class Order < ActiveRecord::Base
     end
     return round_money(total)
   end
-
-  ## tax and shipping are hard-wired to 0 for now
-  def tax_total
-    return 0
+  
+  def total_before_tax
+    round_money(total_before_applying_coupons() - coupon_amount())
   end
-
+  
+  def currency 
+    return Currency.lookup(super) || Currency.default
+  end
+  
+  def currency=(code)
+    result = super(code.class == Currency ? code.code : code)
+  end
+  
+  def currency_rate
+    return super if super != 1.0 # (the default)
+    return currency.rate_to_report_currency
+  end
+  
+  def has_tax?
+    return $STORE_PREFS['tax'] && $STORE_PREFS['tax'][country] != nil && ($STORE_PREFS['tax'][country]['name'] || (state && $STORE_PREFS['tax'][country][state]))
+  end
+  
+  def tax_name
+    return taxinfo['name'] if has_tax?
+  end
+  
+  def tax_rate
+    has_tax? ? taxinfo['rate'] : 0.0
+  end
+  
+  def tax_amount
+    return (has_tax? ? round_money(total_before_tax * taxinfo['rate']) : 0)
+  end
+  
+  # Shipping is hard-wired to zero for now
   def shipping_total
     return 0
   end
 
   def coupon_amount
     return 0 if coupon == nil
-    return coupon.amount if coupon.percentage == nil
+    return coupon.lookup_amount(currency).amount.to_f if coupon.percentage == nil || coupon.percentage == 0.0
+    
     for item in self.line_items
       if coupon && coupon.percentage != nil && coupon.product_code == item.product.code
         return round_money(item.total * coupon.percentage / 100.0)
@@ -95,7 +130,7 @@ class Order < ActiveRecord::Base
 
   def volume_discount_total
     total = self.total()
-    self.line_items.collect{|x| x.regular_price * x.quantity}.each {|x| total -= x}
+    self.line_items.collect{|x| x.regular_price_for_currency(currency) * x.quantity}.each {|x| total -= x}
     return -total
   end
 
@@ -257,7 +292,7 @@ class Order < ActiveRecord::Base
         next if item.quantity == 0
         return false if item.quantity < 0
 
-        item.unit_price = Product.find(product_id).price
+        item.unit_price = Product.find(product_id).lookup_price(currency.code).amount
         self.line_items << item
       end
       for item in self.line_items
@@ -346,6 +381,11 @@ class Order < ActiveRecord::Base
         item.save()
       end
     end
+    
+    # Set currency rate
+    if self[:currency_rate] == 1.0 # (the default)
+      self.currency_rate = currency.rate_to_report_currency
+    end
 
     if self.coupon != nil && !self.coupon.new_record? && self.coupon.changed?
       self.coupon.save()
@@ -369,9 +409,13 @@ class Order < ActiveRecord::Base
 
     self.save()
 
-    if self.email_receipt_when_finishing && !self.gcheckout?
-      # Google Checkout orders get the emails delivered when the final OK notification from Google arrives
-      OrderMailer.deliver_thankyou(self) if is_live?()
+    if ENV['RAILS_ENV'] != 'test'
+      if self.status == 'F'
+        OrderMailer.deliver_error_notice(self)
+      elsif self.email_receipt_when_finishing && !self.gcheckout?
+        # Google Checkout orders get the emails delivered when the final OK notification from Google arrives
+        OrderMailer.deliver_thankyou(self)
+      end
     end
   end
 
@@ -536,5 +580,35 @@ class Order < ActiveRecord::Base
     command.google_order_number = self.transaction_number
     command.send_to_google_checkout() rescue nil
   end
+  
+  # Encode the line items and coupon of this order in a succint format (within 127 chars)
+  def tinyencode
+    require 'base64'
+    items = {}; self.line_items.each { |item| items[item.product_id] = item.quantity }
+    return Base64::encode64(Marshal.dump([items, (self.coupon_text if self.coupon)])).strip
+  end
+  
+  # Decode the previously encoded order (from tinyencode), into this order
+  def tinydecode(encoded)
+    begin
+      require 'base64'
+      data = Marshal::load(Base64::decode64(encoded))
+    rescue TypeError
+      logger.error("Could not decode encoded order: #{encoded}")
+      return false
+    end
+    
+    items,coupontext = data
+    
+    self.add_form_items(items) or return false
+    self.coupon_text = coupontext if coupontext
+    
+    return true
+  end
+  
+  private  
+    def taxinfo
+      return (($STORE_PREFS['tax'][country][state] if state) || $STORE_PREFS['tax'][country]) if has_tax?
+    end
 end
 

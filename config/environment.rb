@@ -48,6 +48,11 @@ Rails::Initializer.run do |config|
 
   # Gems
   config.gem "google4r-checkout"
+  config.gem "geokit"
+  
+  #config.action_controller.relative_url_root = "/store" # Uncomment if you wish to install in a sub-directory of your site
+  
+  config.active_record.timestamped_migrations = false
 end
 
 # Add new inflection rules using the following format

@@ -30,9 +30,16 @@
 
 	<tr>
 		<td>Discount Amount:</td>
-		<td><%= text_field 'form', 'amount' %></td>
+		<td><%= text_field 'form', 'amount' %> <%= Currency.default.code %></td>
 	</tr>
 
+	<tr>
+		<td>Amounts in Other Currencies:</td>
+		<td><%= text_area 'form', 'regional_prices', :size => "30x4" %><br/>
+		  <small>Format: "[Three-letter currency code] [price]", each on a new line.  E.g. "USD 3.50".<br/>
+		    Available currencies: <%= (a = (Currency.find(:all).map { |c| c.code } - [Currency.default.code]).join(', ')).empty? ? 'None' : a %>  <%= link_to 'Edit Currencies', admin_currencies_path %></td>
+	</tr>
+	
 	<tr>
 		<td>Use Limit:</td>
 		<td><%= text_field 'form', 'use_limit', :value => '1' %></td>

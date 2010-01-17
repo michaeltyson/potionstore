@@ -4,6 +4,22 @@ class Store::OrderController < ApplicationController
 
   before_filter :redirect_to_ssl
 
+  if is_live?
+    geocode_ip_address
+  else
+    # Pretend to geocode
+    before_filter :pseudo_geocode 
+    def pseudo_geocode
+      session[:geo_location] = Class.new { def country_code; "AU"; end; def state; "Victoria"; end }.new
+    end
+    after_filter :pseudo_geocode_finish
+    def pseudo_geocode_finish
+      session[:geo_location] = nil
+    end
+  end
+  
+  before_filter :apply_currency
+  
   def index
     new
     render :action => 'new'
@@ -15,14 +31,23 @@ class Store::OrderController < ApplicationController
 
   def new
     session[:order_id] = nil
+    @order = Order.new
+    @order.currency = session[:currency] if session[:currency]
+    if session[:geo_location]
+      @order.country = session[:geo_location].country_code
+      @order.state = session[:geo_location].state
+    end
     @qty = {}
-    @payment_type = session[:payment_type]
+    @payment_type = session[:payment_type] || $STORE_PREFS['default_payment_type']
     @products = Product.find(:all, :conditions => {:active => 1})
     if params[:product]
       @qty[params[:product]] = 1
     elsif session[:items]
       for key in session[:items].keys
-        @qty[Product.find(key).code] = session[:items][key]
+        begin
+          @qty[Product.find(key).code] = session[:items][key]
+        rescue ActiveRecord::RecordNotFound
+        end
       end
     end
   end
@@ -31,8 +56,16 @@ class Store::OrderController < ApplicationController
     session[:order_id] = nil
     redirect_to :action => 'index' and return if !params[:items]
     @order = Order.new
-    @order.payment_type = params[:payment_type]
-    session[:payment_type] = params[:payment_type]
+    @order.currency = session[:currency] if session[:currency]
+    if session[:geo_location]
+      @order.country = session[:geo_location].country_code
+      @order.state = session[:geo_location].state
+    end
+    
+    payment_type = $STORE_PREFS['payment_types'].count == 1 ? $STORE_PREFS['payment_types'].first : params[:payment_type]
+    
+    @order.payment_type = payment_type
+    session[:payment_type] = payment_type
 
     session[:items] = params[:items]
 
@@ -59,9 +92,14 @@ class Store::OrderController < ApplicationController
       flash[:notice] = 'Nothing to buy!'
       redirect_to :action => 'index' and return
     end
+    
+    if !$STORE_PREFS['payment_types'].member? payment_type
+      flash[:notice] = 'Unavailable payment method - Please try again'
+      redirect_to :action => 'index' and return
+    end
 
-    # Handle Paypal orders
-    if params[:payment_type] == 'paypal'
+    # Handle Paypal Express Checkout orders
+    if payment_type == 'paypal_express_checkout'
       res =  Paypal.express_checkout(:amount => String(@order.total),
                                      :cancelURL => url_for(:action => 'index'),
                                      :returnURL => url_for(:action => 'confirm_paypal'),
@@ -80,18 +118,26 @@ class Store::OrderController < ApplicationController
         flash[:notice] = 'Could not connect to PayPal'
         redirect_to :action => 'index' and return
       end
-
+      
+    # Handle PayPal WPS orders (refer config/paypal_wps.yml)
+    elsif payment_type == 'paypal_wps' 
+      render :action => 'payment_paypal_wps' and return
+   
     # Handle Google Checkout orders
-    elsif params[:payment_type] == 'gcheckout'
+    elsif payment_type == 'gcheckout'
       render :action => 'payment_gcheckout' and return
+    
+    # Handle credit card orders
+    elsif payment_type == 'creditcard'
+      # put in a dummy credit card number for testing
+      @order.cc_number = '4916306176169494' if not is_live?()
+
+      render :action => 'payment_cc'
+    else
+      
+      flash[:notice] = 'Unavailable payment method - Please try again'
+      redirect_to :action => 'index' and return
     end
-
-    # credit card order
-
-    # put in a dummy credit card number for testing
-    @order.cc_number = '4916306176169494' if not is_live?()
-
-    render :action => 'payment_cc'
   end
 
   def redirect
@@ -118,7 +164,12 @@ class Store::OrderController < ApplicationController
     end
 
     @order = Order.new(params[:order])
-
+    @order.currency = session[:currency] if session[:currency] && !@order.currency
+    if session[:geo_location]
+      @order.country = session[:geo_location].country_code if !@order.country
+      @order.state = session[:geo_location].state if !order.state
+    end
+    
     session[:order_id] = @order.id
 
     if not @order.save()
@@ -161,6 +212,12 @@ class Store::OrderController < ApplicationController
     params[:order].keys.each { |x| params[:order][x] = params[:order][x].strip if params[:order][x] != nil }
 
     @order = Order.new(params[:order])
+
+    @order.currency = session[:currency] if session[:currency] && !@order.currency
+    if session[:geo_location]
+      @order.country = session[:geo_location].country_code if !@order.country
+      @order.state = session[:geo_location].state if !order.state
+    end
 
     # the order in the session is a bogus temporary one
     @order.add_form_items(params[:items])
@@ -263,6 +320,90 @@ class Store::OrderController < ApplicationController
     # check_completed_order is a before_filter for this method
     @order = Order.find(session[:order_id])
   end
+  
+  def wps_thankyou
+    if params[:tx]
+      # Got PDT from PayPal (refer config/paypal_wps.yml)
+      # POST back to PayPal to get the details
+      begin
+        session[:order_details] = nil
+        require 'net/http'
+        require 'net/https'
+        url = URI.parse($STORE_PREFS['paypal_wps_url'])
+        req = Net::HTTP::Post.new(url.path)
+        req.set_form_data({:cmd => '_notify-synch', :tx  => params[:tx], :at  => $STORE_PREFS['paypal_wps_pdt_token']});
+        http = Net::HTTP.new(url.host, url.port)
+        http.use_ssl = true
+        body = http.start { |h| (res=h.request(req)).kind_of? Net::HTTPSuccess and res.read_body or nil }
+        if body && body.lines.first.strip == 'SUCCESS'
+          # PDT details available: Save them into the session, then redirect immediately with the 
+          # utm_nooverride parameter set in the URL - this is a hack that prevents Google Analytics from
+          # always crediting PayPal with the referral instead of the true referral.
+          # See http://www.roirevolution.com/blog/2007/02/tracking_paypal_transactions_in_google_analytics_1.html
+          require 'uri'
+          order_details = {}; body.each_line { |line| var,val=line.strip.split '='; order_details[var] = URI.decode val if val }
+          session[:order_details] = order_details
+          redirect_to "#{request.request_uri[0..request.request_uri.index('?')-1]}?utm_nooverride=1" and return
+        end
+      rescue Exception => e
+        logger.warn("Connection problem while trying to post PDT token to PayPal for customer #{params[:payer_email]}: #{e.inspect}")
+      end
+    end
+    
+    if session[:order_details]
+      info = session[:order_details]
+      
+      info.each_pair { |var,val| logger.info("#{var} = #{val}") } if !is_live?
+      
+      begin
+        @order = Order.find_by_transaction_number_and_payment_type(info['txn_id'], 'PayPal')
+      rescue
+      end
+      
+      if !@order
+        # Create a temporary order from the PDT details
+        # Note that the real order will be created and saved within the notification handler, Store::NotificationController#paypal_wps
+        @order = Order.new
+        @order.status = 'S'
+        @order.first_name = info['first_name']
+        @order.last_name = info['last_name']
+
+        if info['custom'] && @order.valid_licensee_name(info['custom'])
+          @order.licensee_name = info['custom']
+        else
+          @order.licensee_name = @order.first_name + " " + @order.last_name
+        end
+
+        @order.email = info['payer_email']
+
+        @order.address1 = info['address_street'] 
+        @order.address2 = '' 
+        @order.city     = info['address_city'] 
+        @order.country  = info['address_country_code'] 
+        @order.zipcode  = info['address_zip'] 
+        @order.state    = info['address_state'] 
+
+        if !@order.country
+          # No address given to us by PayPal; try the other field
+          @order.country = info['residence_country'] or 'XX'
+        end
+
+        @order.payment_type = "PayPal"
+        @order.currency = info['mc_currency']
+      
+        @order.tinydecode info['item_number']
+      end
+      
+      @payment = info['mc_gross']
+      
+      @products = @order.line_items.map {|i| i.product}
+    end
+    
+    if !@products
+      @products = Product.find(:all, :conditions => {:active => 1})
+    end
+    
+  end
 
   def receipt
     # no need to check for nil order in the session here.
@@ -275,7 +416,11 @@ class Store::OrderController < ApplicationController
   ## Private methods
   private
   def check_completed_order
-    @order = Order.find(session[:order_id])
+    begin
+      @order = Order.find(session[:order_id])
+    rescue RecordNotFound
+      @order = nil
+    end
     unless @order && @order.complete?
       redirect_to :action => "index"
     end
@@ -298,4 +443,13 @@ class Store::OrderController < ApplicationController
     end
   end
 
+  def apply_currency
+    if params[:set_currency] && Currency.lookup(params[:set_currency])
+      session[:currency] = params[:set_currency]
+      return
+    end
+    return if session[:currency] || !session[:geo_location]
+    country = session[:geo_location].country_code
+    session[:currency] = (Currency.find_with_country(country) || Currency.default).code
+  end
 end

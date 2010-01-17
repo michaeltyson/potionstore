@@ -183,7 +183,7 @@ class IsolatedHelpersTest < Test::Unit::TestCase
   end
 
   class C < A
-    helper { def shout; 'C' end }
+    helper { def shout; :complete end }
 
     def index
       render :inline => '<%= shout %>'
@@ -205,6 +205,6 @@ class IsolatedHelpersTest < Test::Unit::TestCase
   end
 
   def test_helper_in_c
-    assert_equal 'C', C.process(@request, @response).body
+    assert_equal :complete, C.process(@request, @response).body
   end
 end

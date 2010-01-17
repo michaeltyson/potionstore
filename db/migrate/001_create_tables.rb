@@ -58,7 +58,7 @@ class CreateTables < ActiveRecord::Migration
       t.column "product_id",  :integer,                                              :default => 0,   :null => false
       t.column "quantity",    :integer,                                              :default => 0,   :null => false
       t.column "unit_price",  :decimal,               :precision => 10, :scale => 2, :default => 0.0, :null => false
-      t.column "license_key", :string,  :limit => 64
+      t.column "license_key", :string
     end
 
     add_index "line_items", ["order_id"], :name => "order_id"
@@ -73,25 +73,27 @@ class CreateTables < ActiveRecord::Migration
 
     add_foreign_key_constraint "orders", "coupon_id", "coupons", "id", :on_update => nil, :on_delete => :restrict
 
-    p = Product.new
-    p.code = "foo"
-    p.name = "Footion v1"
-    p.price = 12.95
-    p.image_path = "/images/store/application_icon.png"
-    p.url = "http://www.mycompany.com/foo/"
-    p.download_url = "http://www.mycompany.com/foo/download/"
-    p.license_url_scheme = "x-com-mycompany-license-footion"
-    p.save()
+    if ENV['RAILS_ENV'] != 'production'
+      p = Product.new
+      p.code = "foo"
+      p.name = "Footion v1"
+      p.price = 12.95
+      p.image_path = "/images/store/application_icon.png"
+      p.url = "http://www.mycompany.com/foo/"
+      p.download_url = "http://www.mycompany.com/foo/download/"
+      p.license_url_scheme = "x-com-mycompany-license-footion"
+      p.save()
 
-    p = Product.new
-    p.code = "bar"
-    p.name = "Barsoap v1"
-    p.price = 24.95
-    p.url = "http://www.mycompany.com/bar/"
-    p.image_path = "/images/store/application_icon.png"
-    p.download_url = "http://www.mycompany.com/bar/download/"
-    p.license_url_scheme = "x-com-mycompany-license-barsoap"
-    p.save()
+      p = Product.new
+      p.code = "bar"
+      p.name = "Barsoap v1"
+      p.price = 24.95
+      p.url = "http://www.mycompany.com/bar/"
+      p.image_path = "/images/store/application_icon.png"
+      p.download_url = "http://www.mycompany.com/bar/download/"
+      p.license_url_scheme = "x-com-mycompany-license-barsoap"
+      p.save()
+    end
   end
 
   def self.down

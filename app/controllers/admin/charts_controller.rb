@@ -123,14 +123,15 @@ class Admin::ChartsController < ApplicationController
               extract(month from orders.order_time) as month,
               extract(day from orders.order_time) as day,
               extract(day from age(date_trunc('day', orders.order_time))) as days_ago,
-              sum(line_items.unit_price * quantity)
-                - sum(coalesce(coupons.amount, 0))
-                - sum(line_items.unit_price * quantity * coalesce(percentage, 0) / 100) as revenue,
+              (sum(line_items.unit_price * quantity)
+                - sum(coalesce(regional_prices.amount, coupons.amount, 0))
+                - sum(line_items.unit_price * quantity * coalesce(percentage, 0) / 100)) * orders.currency_rate as revenue,
               max(orders.order_time) as last_time
 
          from orders
               inner join line_items on orders.id = line_items.order_id
               left outer join coupons on coupons.id = orders.coupon_id
+              left outer join regional_prices on regional_prices.container_id = coupons.id AND regional_prices.container_type = 'Product' AND regional_prices.currency = orders.currency
 
         where status = 'C' and lower(payment_type) != 'free' and current_date - #{days-1} <= order_time
 
@@ -143,14 +144,15 @@ class Admin::ChartsController < ApplicationController
               extract(month from orders.order_time) as month,
               extract(day from orders.order_time) as day,
               datediff(now(), orders.order_time) as days_ago,
-              sum(line_items.unit_price * quantity)
-                - sum(coalesce(coupons.amount, 0))
-                - sum(line_items.unit_price * quantity * coalesce(percentage, 0) / 100) as revenue,
+              (sum(line_items.unit_price * quantity)
+                - sum(coalesce(regional_prices.amount, coupons.amount, 0))
+                - sum(line_items.unit_price * quantity * coalesce(percentage, 0) / 100)) * orders.currency_rate as revenue,
               max(orders.order_time) as last_time
 
          from orders
               inner join line_items on orders.id = line_items.order_id
               left outer join coupons on coupons.id = orders.coupon_id
+              left outer join regional_prices on regional_prices.container_id = coupons.id AND regional_prices.container_type = 'Product' AND regional_prices.currency = orders.currency
 
         where status = 'C' and lower(payment_type) != 'free' and current_date - #{days-1} <= order_time
 
@@ -163,14 +165,15 @@ class Admin::ChartsController < ApplicationController
   def revenue_history_weeks_sql(weeks)
     # This query stays the same for both DBMS
     "select extract(week from orders.order_time) as week,
-            sum(line_items.unit_price * quantity)
-              - sum(coalesce(coupons.amount, 0))
-              - sum(line_items.unit_price * quantity * coalesce(percentage, 0) / 100) as revenue,
+            (sum(line_items.unit_price * quantity)
+              - sum(coalesce(regional_prices.amount, coupons.amount, 0))
+              - sum(line_items.unit_price * quantity * coalesce(percentage, 0) / 100)) * orders.currency_rate as revenue,
             max(orders.order_time) as last_time
 
        from orders
             inner join line_items on orders.id = line_items.order_id
             left outer join coupons on coupons.id = orders.coupon_id
+            left outer join regional_prices on regional_prices.container_id = coupons.id AND regional_prices.container_type = 'Product' AND regional_prices.currency = orders.currency
 
       where status = 'C' and lower(payment_type) != 'free' and current_date - #{(weeks-1)*7} <= order_time
 
@@ -184,9 +187,9 @@ class Admin::ChartsController < ApplicationController
       "select extract(year from orders.order_time) as year,
               extract(month from orders.order_time) as month,
               extract(month from age(date_trunc('month', orders.order_time))) as months_ago,
-              sum(line_items.unit_price * quantity)
-                - sum(coalesce(coupons.amount, 0))
-                - sum(line_items.unit_price * quantity * coalesce(percentage, 0) / 100) as revenue,
+              (sum(line_items.unit_price * quantity)
+                - sum(coalesce(regional_prices.amount, coupons.amount, 0))
+                - sum(line_items.unit_price * quantity * coalesce(percentage, 0) / 100)) * orders.currency_rate as revenue,
               max(orders.order_time) as last_time
 
          from orders
@@ -203,14 +206,15 @@ class Admin::ChartsController < ApplicationController
       "select extract(year from orders.order_time) as year,
               extract(month from orders.order_time) as month,
               month(datediff(now(), orders.order_time)) as months_ago,
-              sum(line_items.unit_price * quantity)
-                - sum(coalesce(coupons.amount, 0))
-                - sum(line_items.unit_price * quantity * coalesce(percentage, 0) / 100) as revenue,
+              (sum(line_items.unit_price * quantity)
+                - sum(coalesce(regional_prices.amount, coupons.amount, 0))
+                - sum(line_items.unit_price * quantity * coalesce(percentage, 0) / 100)) * orders.currency_rate as revenue,
               max(orders.order_time) as last_time
 
          from orders
               inner join line_items on orders.id = line_items.order_id
               left outer join coupons on coupons.id = orders.coupon_id
+              left outer join regional_prices on regional_prices.container_id = coupons.id AND regional_prices.container_type = 'Product' AND regional_prices.currency = orders.currency
 
         where status = 'C' and lower(payment_type) != 'free'
 

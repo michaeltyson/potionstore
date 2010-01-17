@@ -28,21 +28,47 @@ function correctPNG() // correctly handle PNG transparency in Win IE 5.5 & 6.
    }    
 }
 
-function setup_help_values() {
-	for (element_id in HELP_VALUES) {
-		setup_help_value(element_id);
-	}
-}
 
-function setup_help_value(element_id) {
+var STATE_UNFOCUSED = 0;
+var STATE_FOCUSED = 1;
+
+function setup_help_value(element_id, state) {
 	var element = $(element_id).get(0);
 	var help_text = HELP_VALUES[element_id];
-	if (element.value == help_text) {
+	element.style.color = (state == STATE_FOCUSED ? '#000' : '#aaa');
+
+	if ( state == STATE_FOCUSED && element.value == help_text) {
 		element.value = '';
-		element.style.color = '#000';
-	}
-	else if (element.value == '') {
-		element.style.color = '#aaa';
+	} else if ( state == STATE_UNFOCUSED && element.value == '') {
 		element.value = help_text;
 	}
 }
+
+function setup_help_values() {
+	for (element_id in HELP_VALUES) {
+		setup_help_value(element_id, STATE_UNFOCUSED);
+	}
+}
+
+function clear_help_values() {
+	for (element_id in HELP_VALUES) {
+	   var element = $(element_id).get(0);
+		if ( element.value == HELP_VALUES[element_id] ) {
+		   element.value = '';
+		}
+	}
+}
+
+
+
+$(document).ready(function(){
+   if ( typeof(window['HELP_VALUES']) != 'undefined' ) {
+      $(document).unload = clear_help_values;
+      setup_help_values();
+      for (element_id in HELP_VALUES) {
+         var element = $(element_id);
+         element.focus(function() { setup_help_value(element_id, STATE_FOCUSED); });
+         element.blur(function() { setup_help_value(element_id, STATE_UNFOCUSED); });
+      }
+   }
+});

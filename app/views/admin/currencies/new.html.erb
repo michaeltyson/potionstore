@@ -1,0 +1,7 @@
+<h1>New Currency</h1>
+
+<% form_for([:admin, @currency]) do |f| %>
+  <%= render :partial => 'form', :object => f %>
+<% end %>
+
+<p><%= link_to 'Back', admin_currencies_path %></p>

@@ -1,0 +1,34 @@
+<h1>Currencies</h1>
+
+<table class="list">
+  <tr>
+	<th>Currency</th>
+	<th>Applicable Countries</th>
+	<th>Format</th>
+ 	<th colspan='2'>Action</th>
+</tr>
+<% @currencies.each do |currency| %>
+  <tr>
+    <td><%=h currency.code %></td>
+	  <td><%=h country_name_and_code_pairs.find_all { |v| currency.countries.member? v[1] }.map { |v| v[0] }.join ', ' %></td>
+	  <td><%=h currency.format_amount 19.99 %></td>
+    <td><%= link_to 'Edit', edit_admin_currency_path(currency) %></td>
+    <td><%= link_to 'Delete', admin_currency_path(currency), :confirm => 'Are you sure?', :method => :delete %></td>
+  </tr>
+<% end %>
+<tr>
+  <td><%=h Currency.default.code %> <i>(default)</i></td>
+  <td>All others</td>
+  <td><%=h Currency.default.format_amount 19.99 %></td>
+  <td colspan="2"><i>Edit in config/store.yml</i></td>
+</tr>
+<tr>
+  <td><%=h Currency.report_currency.code %> <i>(for reporting)</i></td>
+  <td>N/A</td>
+  <td><%=h Currency.report_currency.format_amount 19.99 %></td>
+  <td colspan="2"><i>Edit in config/store.yml</i></td>
+</tr>
+</table>
+<p>
+<%= link_to 'Add Currency', new_admin_currency_path %>
+</p>

@@ -48,7 +48,7 @@ end
 
 
 # Setup Google Checkout if it's in use
-if $STORE_PREFS['allow_google_checkout']
+if $STORE_PREFS['payment_types'].member? 'google_checkout'
 
   require 'google4r/checkout'
 
@@ -94,4 +94,23 @@ if $STORE_PREFS['allow_google_checkout']
   # Go ahead and call the Google Checkout initialization function
   _initialize_google_checkout()
 
+end
+
+
+# Setup PayPal WPS if it's in use
+if $STORE_PREFS['payment_types'].member? 'paypal_wps'
+  environment = ENV['RAILS_ENV'] || 'production'
+
+  app_root = File.dirname(__FILE__) + '/../..'
+  config_dir = app_root + '/config'
+
+  prefs = File.expand_path(config_dir + '/paypal_wps.yml')
+  if File.exists?(prefs)
+    y = YAML.load(File.open(prefs))[environment]
+    
+    # Save the settings; They are used in payment_paypal_wps.rhtml
+    ['paypal_wps_email_address', 'paypal_wps_purchase_item_name', 'paypal_wps_url', 'paypal_wps_pdt_token'].each do |var|
+      $STORE_PREFS[var] = y[var]
+    end
+  end
 end

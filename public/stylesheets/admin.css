@@ -99,3 +99,8 @@ table.list tr.newday { border-top:3px double #ccc; }
 .fl { float: left; }
 .fr { float: right; }
   
+pending {
+   background: #eee;
+}
+
+tbody th { text-align: left; }

@@ -41,6 +41,8 @@ class Admin::OrdersController < ApplicationController
 
   # GET /orders/new
   def new
+    @currencies = Currency.find(:all).map { |c| c.code }
+    @currencies.insert(0, Currency.default.code)
     @order = Order.new
     @order.country = 'US'
     @order.payment_type = 'Free'
@@ -48,6 +50,8 @@ class Admin::OrdersController < ApplicationController
 
   # GET /orders/1;edit
   def edit
+    @currencies = Currency.find(:all).map { |c| c.code }
+    @currencies.insert(0, Currency.default.code)
     @order = Order.find(params[:id])
   end
 
@@ -125,6 +129,13 @@ class Admin::OrdersController < ApplicationController
     @order = Order.find(params[:id])
     OrderMailer.deliver_thankyou(@order)
     redirect_to :action => 'show', :id => @order.id
+  end
+  
+  def product_quantities_for_currency
+    @order = params[:id] ? Order.find(params[:id]) : Order.new;
+    params[:action] = params[:id] ? 'edit' : 'new'
+    @order.currency = params[:currency]
+    render :partial => "product_quantities"
   end
 
   protected

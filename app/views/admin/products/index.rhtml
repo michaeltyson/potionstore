@@ -11,10 +11,10 @@
 <% for product in @products %>
   <tr>
     <td><%= image_tag(product.image_path) %></td>
-	<td><%=h product.code %></td>
-	<td><%=h product.name %></td>
-	<td><%=h number_to_currency(product.price) %></td>
-	<td><%= link_to 'Show', admin_product_path(product) %></td>
+    <td><%=h product.code %></td>
+    <td><%=h product.name %></td>
+    <td><%=h (product.lookup_price :default).formatted_amount %><%= '*' if product.regional_prices.count > 0 %></td>
+    <td><%= link_to 'Show', admin_product_path(product) %></td>
     <td><%= link_to 'Edit', edit_admin_product_path(product) %></td>
     <td><%= link_to 'Destroy', admin_product_path(product), :confirm => 'Are you sure?', :method => :delete %></td>
   </tr>

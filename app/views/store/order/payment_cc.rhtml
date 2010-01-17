@@ -1,3 +1,4 @@
+<% content_for :head do %>
 <script type="text/javascript">
 
 function reset() {
@@ -69,17 +70,6 @@ $(document).ready(function(){
 	$('#order_cc_number').change(choose_cc);
 	$('#order_cc_number').keyup(choose_cc);
 
-	$('#order_cc_month').focus(function() { setup_help_value('#order_cc_month'); });
-	$('#order_cc_month').blur( function() { setup_help_value('#order_cc_month'); });
-	$('#order_cc_year').focus( function() { setup_help_value('#order_cc_year'); });
-	$('#order_cc_year').blur(  function() { setup_help_value('#order_cc_year'); });
-	$('#order_company').focus( function() { setup_help_value('#order_company'); });
-	$('#order_company').blur(  function() { setup_help_value('#order_company'); });
-	$('#order_address2').focus(function() { setup_help_value('#order_address2'); });
-	$('#order_address2').blur( function() { setup_help_value('#order_address2'); });
-	$('#order_comment').focus( function() { setup_help_value('#order_comment'); });
-	$('#order_comment').blur(  function() { setup_help_value('#order_comment'); });
-
 	$('#purchase').validate({
 		submitHandler: function (form) {
 			choose_cc();
@@ -91,7 +81,7 @@ $(document).ready(function(){
 });
 
 </script>
-
+<% end -%>
 <h1>Checkout</h1>
 
 <% unless @order.errors.empty? %>
@@ -119,20 +109,20 @@ $(document).ready(function(){
     <% for item in @order.line_items -%>
     <%   if item.quantity > 0 -%>
     <tr>
-        <td class="price"><%= item.quantity %> @ <%= number_to_currency item.unit_price %> each</td>
+        <td class="price"><%= item.quantity %> @ <%= @order.currency.format_amount item.unit_price %> each</td>
         <td class="prod"><%= item.product.name %></td>
     </tr>
     <%   end -%>
     <% end -%>
     <% if @order.coupon -%>
     <tr>
-      <td class="price">-<%= number_to_currency(@order.coupon_amount) %></td>
+      <td class="price">-<%= @order.currency.format_amount(@order.coupon_amount) %></td>
       <td><%= @order.coupon.description %></td>
     </tr>
     <% end -%>
     <tr id="total">
         <td></td>
-        <td>Total: <strong><%= number_to_currency @order.total %></strong></td>
+        <td>Total: <strong><%= @order.currency.format_amount @order.total %></strong></td>
     </tr>
 </table>
 
@@ -182,16 +172,16 @@ $(document).ready(function(){
 	<h2>Credit Card</h2>
     <p id="cards"><span>Card Type:</span>
 	<input id="Visa" type="radio" name="order[payment_type]" value="Visa" checked="checked" />
-	<img src="/images/store/visa.gif" alt="Visa" onclick="select_cc('Visa')"/>
+	<img src="<%= image_path('store/visa.gif') %>" alt="Visa" onclick="select_cc('Visa')"/>
 
 	<input id="MasterCard" type="radio" name="order[payment_type]" value="MasterCard"/>
-	<img src="/images/store/mc.gif" alt="MasterCard" onclick="select_cc('MasterCard')" />
+	<img src="<%= image_path('store/mc.gif') %>" alt="MasterCard" onclick="select_cc('MasterCard')" />
 
 	<input id="Amex" type="radio" name="order[payment_type]" value="Amex" />
-	<img src="/images/store/amex.gif" alt="Amex" onclick="select_cc('Amex')" />
+	<img src="<%= image_path('store/amex.gif') %>" alt="Amex" onclick="select_cc('Amex')" />
 
 	<input id="Discover" type="radio" name="order[payment_type]" value="Discover" />
-	<img src="/images/store/discover.gif" alt="Discover" onclick="select_cc('Discover')" />
+	<img src="<%= image_path('store/discover.gif') %>" alt="Discover" onclick="select_cc('Discover')" />
     </p>
 
     <p><label><span>Credit Card Number:</span><%= text_field "order", "cc_number", :size=>24, :class => "required creditcard" %></label></p>
@@ -200,7 +190,7 @@ $(document).ready(function(){
         <label><span>Expiration Date:</span>
 		<%= text_field "order", "cc_month", :maxlength => 2 %></label>/<%= text_field "order", "cc_year", :maxlength=>2 %>
 		<label>CSC: <%= text_field "order", "cc_code", :size =>4 %></label>
-        <img src="/images/store/cvv.png" alt="CVV" style="vertical-align:middle;position:relative; top:-2px;"/>
+        <img src="<%= image_path('store/cvv.png') %>" alt="CVV" style="vertical-align:middle;position:relative; top:-2px;"/>
     </p>
 </div>
 
