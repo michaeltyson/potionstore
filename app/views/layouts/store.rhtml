@@ -44,5 +44,6 @@ urchinTracker();
 <% if is_live?() && $STORE_PREFS['include_mint'] == true -%>
 <script type="text/javascript" src="/mint/?js"></script>
 <% end -%>
+<%= yield :end %>
 </body>
 </html>

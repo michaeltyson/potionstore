@@ -350,55 +350,56 @@ class Store::OrderController < ApplicationController
       end
     end
     
-    if session[:order_details]
-      info = session[:order_details]
-      
-      info.each_pair { |var,val| logger.info("#{var} = #{val}") } if !is_live?
-      
-      begin
-        @order = Order.find_by_transaction_number_and_payment_type(info['txn_id'], 'PayPal')
-      rescue
-      end
-      
-      if !@order
-        # Create a temporary order from the PDT details
-        # Note that the real order will be created and saved within the notification handler, Store::NotificationController#paypal_wps
-        @order = Order.new
-        @order.status = 'S'
-        @order.first_name = info['first_name']
-        @order.last_name = info['last_name']
-
-        if info['custom'] && @order.valid_licensee_name(info['custom'])
-          @order.licensee_name = info['custom']
-        else
-          @order.licensee_name = @order.first_name + " " + @order.last_name
-        end
-
-        @order.email = info['payer_email']
-
-        @order.address1 = info['address_street'] 
-        @order.address2 = '' 
-        @order.city     = info['address_city'] 
-        @order.country  = info['address_country_code'] 
-        @order.zipcode  = info['address_zip'] 
-        @order.state    = info['address_state'] 
-
-        if !@order.country
-          # No address given to us by PayPal; try the other field
-          @order.country = info['residence_country'] or 'XX'
-        end
-
-        @order.payment_type = "PayPal"
-        @order.currency = info['mc_currency']
-      
-        @order.tinydecode info['item_number']
-      end
-      
-      @payment = info['mc_gross']
-      
-      @products = @order.line_items.map {|i| i.product}
+    if !session[:order_details]
+      redirect_to home_url and return
     end
     
+    info = session[:order_details]
+    
+    info.each_pair { |var,val| logger.info("#{var} = #{val}") } if !is_live?
+    
+    begin
+      @order = Order.find_by_transaction_number_and_payment_type(info['txn_id'], 'PayPal')
+    rescue
+    end
+    
+    if !@order
+      # Create a temporary order from the PDT details
+      # Note that the real order will be created and saved within the notification handler, Store::NotificationController#paypal_wps
+      @order = Order.new
+      @order.status = 'S'
+      @order.first_name = info['first_name']
+      @order.last_name = info['last_name']
+
+      if info['custom'] && @order.valid_licensee_name(info['custom'])
+        @order.licensee_name = info['custom']
+      else
+        @order.licensee_name = @order.first_name + " " + @order.last_name
+      end
+
+      @order.email = info['payer_email']
+
+      @order.address1 = info['address_street'] 
+      @order.address2 = '' 
+      @order.city     = info['address_city'] 
+      @order.country  = info['address_country_code'] 
+      @order.zipcode  = info['address_zip'] 
+      @order.state    = info['address_state'] 
+
+      if !@order.country
+        # No address given to us by PayPal; try the other field
+        @order.country = info['residence_country'] or 'XX'
+      end
+
+      @order.payment_type = "PayPal"
+      @order.currency = info['mc_currency']
+    
+      @order.tinydecode info['item_number']
+    end
+    
+    @payment = info['mc_gross']
+    
+    @products = @order.line_items.map {|i| i.product}
     if !@products
       @products = Product.find(:all, :conditions => {:active => 1})
     end

@@ -1,6 +1,3 @@
-<% content_for :head do %>
-  <script type="text/javascript" charset="utf-8" src="/media/scripts/newsletter-form.js"></script>
-<% end %>
 <h1>Thank You</h1>
 
 <%- license = ( @order ? ( @order.line_items.count == 1 ? 'license' : 'licenses' ) : 'license(s)' ) -%>
@@ -34,6 +31,7 @@
     <input type="submit" id="newsletter-subscribe" value="Subscribe"><span id="newsletter-message"></span>
 </div>
 
+<% content_for :end do %>
 <% if is_live?() && ! $STORE_PREFS['google_analytics_account'].blank? && @order -%>
 <!-- Google Analytics Transaction Tracking -->
 <form style="display:none;" name="utmform">
@@ -46,13 +44,14 @@ UTM:I|[order-id]|[sku/code]|[productname]|[category]|[price]|[quantity]
 =end
 -%>
 <textarea id="utmtrans">
-UTM:T|<%=@order.id %>||<%=@order.total*@order.currency_rate %>|<%=@order.tax_amount*@order.currency_rate %>|<%=@order.shipping_total*@order.currency_rate %>|<%=@order.city %>|<%=@order.state %>|<%=@order.country %>
+UTM:T|<%=@order.id %>||<%=(@order.total*@order.currency_rate).round_with_precision(@order.currency.precision) %>|<%=(@order.tax_amount*@order.currency_rate).round_with_precision(@order.currency.precision) %>|<%=(@order.shipping_total*@order.currency_rate).round_with_precision(@order.currency.precision) %>|<%=@order.city %>|<%=@order.state %>|<%=@order.country %>
 <% for item in @order.line_items -%>
-UTM:I|<%=@order.id %>|<%=item.product.code %>|<%=item.product.name %>||<%=item.unit_price*@order.currency_rate %>|<%=item.quantity %>
+UTM:I|<%=@order.id %>|<%=item.product.code %>|<%=item.product.name %>||<%=(item.unit_price*@order.currency_rate).round_with_precision(@order.currency.precision) %>|<%=item.quantity %>
 <% end -%>
 </textarea>
 </form>
 <script type="text/javascript">
 __utmSetTrans();
 </script>
+<% end -%>
 <% end -%>
