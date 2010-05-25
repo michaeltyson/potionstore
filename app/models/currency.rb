@@ -63,7 +63,7 @@ class Currency < ActiveRecord::Base
   end
   
   def rate_set?
-    return self[:rate] != nil
+    return self[:rate] != nil && self[:rate] != 0.0
   end
   
   def rate

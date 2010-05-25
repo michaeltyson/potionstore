@@ -319,9 +319,11 @@ class Store::OrderController < ApplicationController
     # no need to check for nil order in the session here.
     # check_completed_order is a before_filter for this method
     @order = Order.find(session[:order_id])
+    # require 'rails/activesupport/lib/active_support/core_ext/float'
   end
   
   def wps_thankyou
+    # require 'rails/activesupport/lib/active_support/core_ext/float'
     if params[:tx]
       # Got PDT from PayPal (refer config/paypal_wps.yml)
       # POST back to PayPal to get the details
@@ -351,7 +353,7 @@ class Store::OrderController < ApplicationController
     end
     
     if !session[:order_details]
-      redirect_to home_url and return
+      redirect_to :action => 'index' and return
     end
     
     info = session[:order_details]

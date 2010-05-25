@@ -29,7 +29,7 @@ class AdminController < ApplicationController
 
   def logout
     session[:logged_in] = nil
-    redirect_to home_url
+    redirect_to :action => 'index'
   end
 
   # Dashboard page
