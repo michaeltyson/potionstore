@@ -10,7 +10,7 @@
 <% @currencies.each do |currency| %>
   <tr>
     <td><%=h currency.code %></td>
-	  <td><%=h country_name_and_code_pairs.find_all { |v| currency.countries.member? v[1] }.map { |v| v[0] }.join ', ' %></td>
+	  <td><%=h geocoding_country_name_and_code_pairs.find_all { |v| currency.countries.member? v[1] }.map { |v| v[0] }.join ', ' %></td>
 	  <td><%=h currency.format_amount 19.99 %></td>
     <td><%= link_to 'Edit', edit_admin_currency_path(currency) %></td>
     <td><%= link_to 'Delete', admin_currency_path(currency), :confirm => 'Are you sure?', :method => :delete %></td>

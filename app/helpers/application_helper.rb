@@ -4,6 +4,9 @@ def load_country_names()
   config_dir = app_root + '/config/'
   ymlpath = File.expand_path(config_dir + 'countries.yml')
   $COUNTRY_NAMES = YAML.load(File.open(ymlpath))
+  
+  ymlpath = File.expand_path(config_dir + 'geocoding_labels.yml')
+  $GEOCODING_COUNTRY_NAMES = YAML.load(File.open(ymlpath))
 end
 
 load_country_names()
@@ -22,4 +25,14 @@ module ApplicationHelper
     pairs.sort! {|x,y| x[0] <=> y[0]}
     return pairs
   end
+  
+  def geocoding_country_name_and_code_pairs()
+    pairs = []
+    for pair in $GEOCODING_COUNTRY_NAMES
+      pairs << [pair[1], pair[0]]
+    end
+    pairs.sort! {|x,y| x[0] <=> y[0]}
+    return pairs
+  end
+  
 end
