@@ -13,6 +13,22 @@
 <![endif]-->
     <%= javascript_include_tag "jquery.js", "store.js", "jquery.validate.js", :cache => true %>
     <%= yield :head %>
+    
+    <% if is_live?() && ! $STORE_PREFS['google_analytics_account'].blank? -%>
+    <script type="text/javascript">
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', '<%=$STORE_PREFS['google_analytics_account']%>']);
+      _gaq.push(['_trackPageview']);
+
+      <%= yield :google_tracking %>
+
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
+    <% end -%>
 </head>
 <body>
 <div id="page" class="narrow">
@@ -34,13 +50,7 @@
 		<div id="copyright"><p><%=$STORE_PREFS['copyright_html']%> Powered by <a href="http://www.potionfactory.com/potionstore">Potion Store</a></p></div>
 	</div>
 </div>
-<% if is_live?() && ! $STORE_PREFS['google_analytics_account'].blank? -%>
-<script type="text/javascript" src="https://ssl.google-analytics.com/urchin.js"></script>
-<script type="text/javascript">
-_uacct = "<%=$STORE_PREFS['google_analytics_account']%>";
-urchinTracker();
-</script>
-<% end -%>
+
 <% if is_live?() && $STORE_PREFS['include_mint'] == true -%>
 <script type="text/javascript" src="/mint/?js"></script>
 <% end -%>
