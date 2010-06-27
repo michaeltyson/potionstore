@@ -323,7 +323,7 @@ class Store::OrderController < ApplicationController
   end
   
   def wps_thankyou
-    # require 'rails/activesupport/lib/active_support/core_ext/float'
+
     if params[:tx]
       # Got PDT from PayPal (refer config/paypal_wps.yml)
       # POST back to PayPal to get the details

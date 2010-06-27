@@ -12,11 +12,11 @@ class Currency < ActiveRecord::Base
     
     c.code      = $STORE_PREFS['default_currency']['code'] || 'USD'
     c.rate      = 1.0
-    c.precision = $STORE_PREFS['default_currency']['precision']
+    c.precision = $STORE_PREFS['default_currency']['precision'] || 2
     c.unit      = $STORE_PREFS['default_currency']['unit']
-    c.separator = $STORE_PREFS['default_currency']['separator']
-    c.delimiter = $STORE_PREFS['default_currency']['delimiter']
-    c.format    = $STORE_PREFS['default_currency']['format']
+    c.separator = $STORE_PREFS['default_currency']['separator'] || '.'
+    c.delimiter = $STORE_PREFS['default_currency']['delimiter'] || ','
+    c.format    = $STORE_PREFS['default_currency']['format'] || '%u%n'
     
     return c
   end
@@ -26,11 +26,11 @@ class Currency < ActiveRecord::Base
     
     c.code      = $STORE_PREFS['report_currency']['code'] || 'USD'
     c.rate      = 1.0
-    c.precision = $STORE_PREFS['report_currency']['precision']
+    c.precision = $STORE_PREFS['report_currency']['precision'] || 2
     c.unit      = $STORE_PREFS['report_currency']['unit']
-    c.separator = $STORE_PREFS['report_currency']['separator']
-    c.delimiter = $STORE_PREFS['report_currency']['delimiter']
-    c.format    = $STORE_PREFS['report_currency']['format']
+    c.separator = $STORE_PREFS['report_currency']['separator'] || '.'
+    c.delimiter = $STORE_PREFS['report_currency']['delimiter'] || ','
+    c.format    = $STORE_PREFS['report_currency']['format'] || '%u%n'
     
     return c
   end
